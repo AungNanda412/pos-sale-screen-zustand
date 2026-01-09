@@ -2,6 +2,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import useCategoryStore from "../store/useCategoryStore";
+import { useSWRConfig } from "swr";
 
 const CategoryCreateForm = ({ setOpenDrawer }) => {
   // const handleSubmit = (e) => {
@@ -11,6 +12,7 @@ const CategoryCreateForm = ({ setOpenDrawer }) => {
 
   // }
   const { addCategory } = useCategoryStore();
+  const { mutate } = useSWRConfig();
 
   const {
     register,
@@ -19,18 +21,32 @@ const CategoryCreateForm = ({ setOpenDrawer }) => {
     reset,
   } = useForm();
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     // storeCategory(data.new_category_name);
+    const newCategory = JSON.stringify({
+      // id: Date.now(),
+      title: data.new_category_name,
+    });
+
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    const res = await fetch("http://localhost:8000/categories", {
+      method: "POST",
+      headers: myHeaders,
+      body: newCategory,
+      redirect: "follow",
+    });
+
+    const json = await res.json();
+
+    addCategory(json);
+
+    mutate("http://localhost:8000/categories")
+
     reset();
     setOpenDrawer(false);
     toast.success("New Category is Created");
-
-    const newCategory = {
-      id: Date.now(),
-      title: data.new_category_name,
-    };
-
-    addCategory(newCategory);
   };
 
   const handleCancel = () => {

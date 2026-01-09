@@ -1,18 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CategoryBtn from "./CategoryBtn";
 import CategoryAddBtn from "./CategoryAddBtn";
 import useCategoryStore from "../store/useCategoryStore";
+import CategorySkeletonLoader from "./CategorySkeletonLoader";
+import useSWR from "swr";
 
+const fetcher = (...args) => fetch(...args).then(res => res.json())
 const CategoryList = () => {
 
-  const { categories } = useCategoryStore();
-  // const [categories, setCategory] = useState([
-  //   { id: 0, title: "All" },
-  //   { id: 1, title: "Bread" },
-  //   { id: 2, title: "Cake" },
-  //   { id: 3, title: "Coffee" },
-  //   { id: 4, title: "Smoothie" },
-  // ]);
+  // const { categories,setCategory } = useCategoryStore();
+  // const [isLoading, setIsLoading] = useState(true);
+  const {data: categories, isLoading, error} = useSWR("http://localhost:8000/categories",fetcher)
+
+  useEffect(() =>{
+    //data fetch
+    // fetch("http://localhost:8000/categories")
+    // .then((res) => res.json() )
+    // .then((json) => setCategory(json) )
+    // setIsLoading(false)
+  } ,[]);
 
   // const [activeCategory, setactiveCategory] = useState(0);
 
@@ -27,7 +33,8 @@ const CategoryList = () => {
   return (
     <>
       <div className=" flex flex-col gap-3 mb-6">
-        {categories.map((el) => (
+        {isLoading && <CategorySkeletonLoader />}
+        {categories?.map((el) => (
           <CategoryBtn
             key={el.id}
             category={el}
