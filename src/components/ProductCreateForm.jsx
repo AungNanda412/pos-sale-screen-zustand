@@ -3,6 +3,9 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import useCategoryStore from "../store/useCategoryStore";
 import useProductStore from "../store/useProductStore";
+import useSWR, { useSWRConfig } from "swr";
+
+const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
 const ProductCreateForm = () => {
   // const handleSubmit = (e) => {
@@ -11,8 +14,13 @@ const ProductCreateForm = () => {
   //     console.log(formData.get("category"));
 
   // }
-  const { categories } = useCategoryStore();
+  // const { categories } = useCategoryStore();
+  const { mutate } = useSWRConfig();
   const { products, addProduct, setProductDrawerStatus } = useProductStore();
+  const { data: categories } = useSWR(
+    "http://localhost:8000/categories",
+    fetcher
+  );
 
   const {
     register,
@@ -21,18 +29,35 @@ const ProductCreateForm = () => {
     reset,
   } = useForm();
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     // storeProduct(data.new_product_name);
     reset();
     toast.success("New Product is Created");
-    const newProductId = products[products.length - 1].id + 1;
-    const newProduct = {
-      id: newProductId,
+    // const newProductId = products[products.length - 1].id + 1;
+
+    const newProduct = JSON.stringify({
+      // id: newProductId,
       title: data.new_product_name,
       price: data.product_price,
       category: data.category,
-      image: `/images/${newProductId}.png`,
-    };
+      image: `/images/5.png`,
+    });
+
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    const res = await fetch("http://localhost:8000/products", {
+      method: "POST",
+      headers: myHeaders,
+      body: newProduct,
+      redirect: "follow",
+    });
+
+    const json = await res.json();
+
+    addProduct(json);
+
+    mutate("http://localhost:8000/products");
 
     addProduct(newProduct);
     setProductDrawerStatus(false);
@@ -92,7 +117,6 @@ const ProductCreateForm = () => {
                 value: true,
                 message: "New Product name is required",
               },
-              
             })}
             className={`bg-gray-50 border ${
               errors.product_price ? "border-red-500" : "border-gray-300"
@@ -129,7 +153,7 @@ const ProductCreateForm = () => {
             } bg-gray-50 border  text-gray-900 text-sm rounded-lg   block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500`}
             placeholder="eg. drink"
           >
-            {categories.map((el) => (
+            {categories?.map((el) => (
               <option key={el.id} value={el.title}>
                 {el.title}
               </option>
